@@ -498,11 +498,18 @@ function App(){
   const [typeF,      setTypeF]      = useState("\u0627\u0644\u0643\u0644");
   const [sort,       setSort]       = useState("votes");
 
+  // Track if a save is in-flight — don't overwrite local state during save
+  const saving = React.useRef(false);
+
   const loadVotes = useCallback(async () => {
+    // Skip poll if user just voted — wait for save to complete first
+    if (saving.current) return;
     try {
       const plain = await getVotes();
-      setVotes(fromPlain(plain));
-      setSyncStatus("ok");
+      if (!saving.current) {          // double-check after await
+        setVotes(fromPlain(plain));
+        setSyncStatus("ok");
+      }
     } catch {
       setSyncStatus("error");
     } finally {
@@ -522,10 +529,18 @@ function App(){
       if (newSet.has(mid)) newSet.delete(mid);
       else                  newSet.add(mid);
       const next = { ...prev, [lid]: newSet };
+
+      saving.current = true;
       setSyncStatus("saving");
       saveVotes(toPlain(next))
-        .then(() => setSyncStatus("ok"))
-        .catch(() => setSyncStatus("error"));
+        .then(() => {
+          setSyncStatus("ok");
+          saving.current = false;
+        })
+        .catch(() => {
+          setSyncStatus("error");
+          saving.current = false;
+        });
       return next;
     });
   }, []);
