@@ -498,49 +498,56 @@ function App(){
   const [typeF,      setTypeF]      = useState("\u0627\u0644\u0643\u0644");
   const [sort,       setSort]       = useState("votes");
 
-  // Track if a save is in-flight — don't overwrite local state during save
-  const saving = React.useRef(false);
+  const lastSaved = React.useRef(null);   // آخر نسخة محفوظة
+  const isSaving  = React.useRef(false);  // هل في حفظ جارٍ
 
-  const loadVotes = useCallback(async () => {
-    // Skip poll if user just voted — wait for save to complete first
-    if (saving.current) return;
+  // ── تحميل الأصوات من السيرفر ──────────────────────────────
+  const loadVotes = useCallback(async (isFirst) => {
+    if (isSaving.current) return;   // لا تكتب فوق تعديل محلي
     try {
       const plain = await getVotes();
-      if (!saving.current) {          // double-check after await
+      if (!isSaving.current) {
         setVotes(fromPlain(plain));
+        lastSaved.current = JSON.stringify(plain);
         setSyncStatus("ok");
       }
     } catch {
       setSyncStatus("error");
     } finally {
-      setLoading(false);
+      if (isFirst) setLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    loadVotes();
-    const iv = setInterval(loadVotes, 6000);
+    loadVotes(true);
+    const iv = setInterval(() => loadVotes(false), 8000);
     return () => clearInterval(iv);
   }, [loadVotes]);
 
+  // ── تبديل صوت ─────────────────────────────────────────────
   const onToggle = useCallback((lid, mid) => {
+    // 1. تحديث فوري في الـ UI
     setVotes(prev => {
       const newSet = new Set(prev[lid] || []);
       if (newSet.has(mid)) newSet.delete(mid);
       else                  newSet.add(mid);
       const next = { ...prev, [lid]: newSet };
+      const plain = toPlain(next);
 
-      saving.current = true;
+      // 2. حفظ على السيرفر
+      isSaving.current = true;
       setSyncStatus("saving");
-      saveVotes(toPlain(next))
+
+      saveVotes(plain)
         .then(() => {
+          lastSaved.current = JSON.stringify(plain);
           setSyncStatus("ok");
-          saving.current = false;
         })
-        .catch(() => {
-          setSyncStatus("error");
-          saving.current = false;
+        .catch(() => setSyncStatus("error"))
+        .finally(() => {
+          isSaving.current = false;
         });
+
       return next;
     });
   }, []);
