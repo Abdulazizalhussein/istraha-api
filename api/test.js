@@ -5,17 +5,11 @@ export default async function handler(req, res) {
   const BIN_URL = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
   const HDR     = { "Content-Type": "application/json", "X-Master-Key": BIN_KEY };
 
-  const put = await fetch(BIN_URL, {
+  // Reset to empty
+  const r = await fetch(BIN_URL, {
     method: "PUT", headers: HDR,
-    body: JSON.stringify({ votes: { TEST: ["ali"] } })
+    body: JSON.stringify({ votes: {} })
   });
-  const putText = await put.text();
-
-  const get = await fetch(`${BIN_URL}/latest`, { headers: HDR });
-  const getText = await get.text();
-
-  return res.status(200).json({
-    put_status: put.status, put: JSON.parse(putText),
-    get_status: get.status, get: JSON.parse(getText)
-  });
+  const d = await r.json();
+  return res.status(200).json({ ok: r.ok, record: d.record });
 }
