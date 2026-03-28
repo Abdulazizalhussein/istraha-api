@@ -498,57 +498,28 @@ function App(){
   const [typeF,      setTypeF]      = useState("\u0627\u0644\u0643\u0644");
   const [sort,       setSort]       = useState("votes");
 
-  const lastSaved = React.useRef(null);   // آخر نسخة محفوظة
-  const isSaving  = React.useRef(false);  // هل في حفظ جارٍ
-
-  // ── تحميل الأصوات من السيرفر ──────────────────────────────
-  const loadVotes = useCallback(async (isFirst) => {
-    if (isSaving.current) return;   // لا تكتب فوق تعديل محلي
-    try {
-      const plain = await getVotes();
-      if (!isSaving.current) {
-        setVotes(fromPlain(plain));
-        lastSaved.current = JSON.stringify(plain);
-        setSyncStatus("ok");
-      }
-    } catch {
-      setSyncStatus("error");
-    } finally {
-      if (isFirst) setLoading(false);
-    }
-  }, []);
-
+  // ── اقرأ مرة واحدة عند الفتح فقط ────────────────────────
   useEffect(() => {
-    loadVotes(true);
-    const iv = setInterval(() => loadVotes(false), 8000);
-    return () => clearInterval(iv);
-  }, [loadVotes]);
+    getVotes()
+      .then(plain => { setVotes(fromPlain(plain)); setSyncStatus("ok"); })
+      .catch(() => setSyncStatus("error"))
+      .finally(() => setLoading(false));
+  }, []);  // [] = مرة واحدة فقط، لا polling
 
-  // ── تبديل صوت ─────────────────────────────────────────────
+  // ── تبديل صوت: UI فوري + write فقط ──────────────────────
   const onToggle = useCallback((lid, mid) => {
-    // 1. تحديث فوري في الـ UI
     setVotes(prev => {
       const newSet = new Set(prev[lid] || []);
       if (newSet.has(mid)) newSet.delete(mid);
       else                  newSet.add(mid);
       const next = { ...prev, [lid]: newSet };
-      const plain = toPlain(next);
 
-      // 2. حفظ على السيرفر
-      isSaving.current = true;
       setSyncStatus("saving");
+      saveVotes(toPlain(next))
+        .then(() => setSyncStatus("ok"))
+        .catch(() => setSyncStatus("error"));
 
-      saveVotes(plain)
-        .then(() => {
-          lastSaved.current = JSON.stringify(plain);
-          setSyncStatus("ok");
-        })
-        .catch(() => setSyncStatus("error"))
-        .finally(() => {
-          isSaving.current = false;
-        });
-
-      return next;
+      return next;  // يُحدّث الـ UI فوراً بدون انتظار
     });
   }, []);
 
