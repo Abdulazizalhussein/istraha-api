@@ -1,6 +1,7 @@
-const BIN_ID  = "69c77db2c3097a1dd56ba19c";
-const BIN_KEY = "a$10$0yAyzdJkccLLxr4kpnEezurL5Puqmk0NK0O0EvgMKEbwJoybGr9ES";
+const BIN_ID  = "69c78d22aa77b81da92acfe8";
+const BIN_KEY = "$2a$10$0yAyzdJkccLLxr4kpnEezurL5Puqmk0NK0O0EvgMKEbwJoybGr9ES";
 const BIN_URL = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
+const HDR     = { "Content-Type": "application/json", "X-Master-Key": BIN_KEY };
 
 async function getRawBody(req) {
   return new Promise((resolve, reject) => {
@@ -19,8 +20,6 @@ export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
   if (req.method === "OPTIONS") return res.status(200).end();
 
-  const HDR = { "Content-Type": "application/json", "X-Master-Key": BIN_KEY };
-
   try {
     if (req.method === "GET") {
       const r = await fetch(`${BIN_URL}/latest`, { headers: HDR });
@@ -29,11 +28,10 @@ export default async function handler(req, res) {
     }
 
     if (req.method === "POST") {
-      const raw = await getRawBody(req);
+      const raw  = await getRawBody(req);
       const votes = JSON.parse(raw || "{}").votes ?? {};
       const r = await fetch(BIN_URL, {
-        method: "PUT",
-        headers: HDR,
+        method: "PUT", headers: HDR,
         body: JSON.stringify({ votes })
       });
       const d = await r.json();
