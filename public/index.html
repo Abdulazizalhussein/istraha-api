@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>تصويت الاستراحة 🏡</title>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@700;800;900&family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: #080808; color: #e0ddd8; font-family: Tajawal, Arial, sans-serif; direction: rtl; }
+::-webkit-scrollbar { display: none; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel" data-presets="react">
+const { useState, useEffect, useCallback } = React;
+
+const MEMBERS = [
+  { id:"ali",    name:"علي حمدي",          ini:"عح", c:"#e74c3c" },
+  { id:"mshari", name:"مشاري السبعان",      ini:"مس", c:"#3498db" },
+  { id:"abdl",   name:"عبدالله الرويتع",    ini:"عر", c:"#27ae60" },
+  { id:"amori",  name:"عموري العمر",        ini:"عع", c:"#9b59b6" },
+  { id:"badr",   name:"بدر النصار",         ini:"بن", c:"#f39c12" },
+  { id:"aziz",   name:"عبدالعزيز الحسين",  ini:"عز", c:"#1abc9c" },
+  { id:"sultan", name:"سلطوني السالمي",     ini:"سس", c:"#e67e22" },
+  { id:"khalid", name:"خالد الجرباء",       ini:"خج", c:"#e91e63" },
+  { id:"safwan", name:"صفوان القليطي",      ini:"صق", c:"#00bcd4" },
+  { id:"mohd",   name:"محمد العييري",       ini:"مع", c:"#8bc34a" },
+  { id:"faisal", name:"فيصل العيسى",        ini:"فع", c:"#ff6b6b" },
+];
+const N = MEMBERS.length;
+
+// ── جميع روابط الاستراحات بصيغة /ad/ID المباشرة ──────────────
+const LISTINGS = [
+  // ══ شمال الرياض — حي العارض ══
+  {
+    id:"R1", area:"العارض", region:"شمال", type:"سنوي",
+    annual:45000, monthly:3750, phone:"شركة العباد",
+    name:"العارض — مدخل مستقل · مجلس واسع · مطبخ خارجي",
+    specs:"مدخل مستقل + مجلس واسع جداً + غرفة + حوش + مطبخ خارجي مستقل + دورة مياه. مكيفات ومطبخ راكب.",
+    tags:["🚪 مدخل مستقل","🛋 مجلس واسع","🍳 مطبخ خارجي","🌿 حوش"],
+    ac:"#ff5722", url:"https://sa.aqar.fm/ad/6605556",
+  },
+  {
+    id:"R2", area:"العارض", region:"شمال", type:"سنوي",
+    annual:0, monthly:0, phone:"اتصل عبر الإعلان",
+    name:"العارض — شاليه · ماستر + مجلس ١٦ + مسبحان",
+    specs:"غرفة ماستر + مجلس ١٦ شخص + طاولة طعام + دورتان مياه + مطبخ + جلسة خارجية + مسبحان + مدخل ٣ سيارات.",
+    tags:["🛏 ماستر","🛋 مجلس ١٦","🏊 مسبحان","🚗 ٣ سيارات"],
+    ac:"#009688", url:"https://sa.aqar.fm/ad/6497677",
+  },
+  // ══ شمال الرياض — حي النرجس ══
+  {
+    id:"R3", area:"النرجس", region:"شمال", type:"سنوي",
+    annual:40000, monthly:3334, phone:"0561114888",
+    name:"النرجس — كراج + حوش · شامل المرافق",
+    specs:"مجلس + كراج سيارة + مطبخ + دورة مياه + حوش. مكيفات ومطبخ راكبة. شامل الماء والكهرباء. ١٠٥٠م².",
+    tags:["🚗 كراج","🌿 حوش","💧 شامل المرافق","📐 ١٠٥٠م²"],
+    ac:"#7c4dff", url:"https://sa.aqar.fm/ad/6632074",
+  },
+  // ══ شمال الرياض — حي الخير / بنبان ══
+  {
+    id:"R4", area:"الخير", region:"شمال", type:"شهري",
+    annual:42000, monthly:3500, phone:"0500011713",
+    name:"الخير — غرفتان + شامل الماء والكهرباء",
+    specs:"٨٥٧م². مدخل سيارة + حوش + صالة + مطبخ راكب + دورتان مياه + غرفتان نوم + مكيفات. شامل الماء والكهرباء. قريبة من درة الرياض والأفنيوز.",
+    tags:["🛏 غرفتان","💧 شامل المرافق","📐 ٨٥٧م²","🅿️ كراج"],
+    ac:"#c0392b", url:"https://sa.aqar.fm/ad/6530630",
+  },
+  {
+    id:"R5", area:"الخير", region:"شمال", type:"سنوي",
+    annual:34000, monthly:2834, phone:"اتصل عبر الإعلان",
+    name:"الخير — غرفة + صالة · ٣٤ألف",
+    specs:"٣٩٠م². غرفة نوم + دورة مياه + صالة. حي الخير بنبان شمال الرياض.",
+    tags:["🛏 غرفة+صالة","📐 ٣٩٠م²"],
+    ac:"#8e44ad", url:"https://sa.aqar.fm/ad/6565146",
+  },
+  {
+    id:"R6", area:"الخير", region:"شمال", type:"سنوي",
+    annual:25000, monthly:2084, phone:"اتصل عبر الإعلان",
+    name:"الخير — جديدة أول ساكن · ٢٥ألف",
+    specs:"٤٢٠م². مدخل سيارة + حوش + صالة + غرفة نوم + دورة مياه + مطبخ. جديدة بالكامل. ٣ وحدات متجاورة متاحة.",
+    tags:["✨ أول ساكن","🛏 غرفة","🌿 حوش","🚗 كراج"],
+    ac:"#16a085", url:"https://sa.aqar.fm/ad/6559231",
+  },
+  {
+    id:"R7", area:"الخير", region:"شمال", type:"شهري",
+    annual:18000, monthly:1500, phone:"0561055585",
+    name:"الخير — شاليه مودرن · ١,٥٠٠/شهر الأرخص 💰",
+    specs:"٤٤١م². شالية مودرن بمدخل خاص. غرفة + صالة + دورة مياه + مطبخ + حوش. دفع شهري أو نصف سنوي أو سنوي.",
+    tags:["🏡 شاليه مودرن","💰 الأرخص","🌿 مدخل خاص"],
+    ac:"#f39c12", url:"https://sa.aqar.fm/ad/6340277",
+  },
+  // ══ شرق الرياض — حي الرمال ══
+  {
+    id:"R8", area:"الرمال", region:"شرق", type:"شهري",
+    annual:42000, monthly:3500, phone:"0538387444",
+    name:"الرمال — مجلس + غرفة + حوش · شامل الخدمات",
+    specs:"مجلس مع مشب + غرفة نوم + مطبخ راكب + دورة مياه + مدخل سيارة + حوش. شامل الكهرباء والمياه. شركة صروح المدائن.",
+    tags:["🔥 مشب","🌿 حوش","💧 شامل المرافق","🚗 كراج"],
+    ac:"#2980b9", url:"https://sa.aqar.fm/ad/6408040",
+  },
+  // ══ جنوب الرياض — حي عريض ══
+  {
+    id:"R9", area:"عريض", region:"جنوب", type:"سنوي",
+    annual:20000, monthly:1667, phone:"0506451462",
+    name:"عريض — ٢٠ألف سنوي · غرفة + مطبخ",
+    specs:"٤٥٠م² أرض / ١٥٠م² بناء. غرفة + مطبخ + دورة مياه.",
+    tags:["💰 ٢٠ألف","📐 ٤٥٠م² أرض"],
+    ac:"#27ae60", url:"https://sa.aqar.fm/ad/6559682",
+  },
+  {
+    id:"R10", area:"عريض", region:"جنوب", type:"شهري",
+    annual:21600, monthly:1800, phone:"اتصل عبر الإعلان",
+    name:"عريض — غرفتان + مدخل سيارة · ١,٨٠٠/شهر",
+    specs:"٩٠٠م² أرض. غرفتان + مطبخ + دورة مياه + مدخل سيارة. على شارع ٣٠ مزفلت. غير شامل كهرباء وماء.",
+    tags:["🛏 غرفتان","📐 ٩٠٠م² أرض","🚗 مدخل سيارة"],
+    ac:"#2ecc71", url:"https://sa.aqar.fm/ad/6599357",
+  },
+  {
+    id:"R11", area:"عريض", region:"جنوب", type:"سنوي",
+    annual:22000, monthly:1834, phone:"اتصل عبر الإعلان",
+    name:"عريض — مجلس كبير + غرفة + حوش · ٢٢ألف",
+    specs:"٢٢٥م². مجلس كبير + غرفة نوم + مستودع + دورة مياه + حوش + مدخل سيارة. يُفضل دفعتين أو ثلاث.",
+    tags:["🛋 مجلس كبير","🌿 حوش","🗄 مستودع","🚗 كراج"],
+    ac:"#1abc9c", url:"https://sa.aqar.fm/ad/6534873",
+  },
+  {
+    id:"R12", area:"عريض", region:"جنوب", type:"سنوي",
+    annual:25000, monthly:2084, phone:"0543031487",
+    name:"عريض — جديدة غرفتان · ٢٥ألف",
+    specs:"٤٥٠م². غرفتان + دورة مياه + مطبخ. جديدة بالكامل. ٢٤ألف دفعة واحدة.",
+    tags:["✨ جديدة","🛏 غرفتان","📐 ٤٥٠م²"],
+    ac:"#48c9b0", url:"https://sa.aqar.fm/ad/6625962",
+  },
+  {
+    id:"R13", area:"عريض", region:"جنوب", type:"سنوي",
+    annual:27000, monthly:2250, phone:"0506451462",
+    name:"عريض — غرفتان + مكيفات · ٢٧ألف",
+    specs:"٤٥٠م² أرض / ١١٢م² بناء. غرفتان + مطبخ + دورة مياه + مدخل سيارة. قريبة من الإمام مسلم.",
+    tags:["🛏 غرفتان","🚗 مدخل سيارة","📐 ٤٥٠م² أرض"],
+    ac:"#52be80", url:"https://sa.aqar.fm/ad/6588960",
+  },
+  {
+    id:"R14", area:"عريض", region:"جنوب", type:"سنوي",
+    annual:36000, monthly:3000, phone:"مكتب اللحيدان",
+    name:"عريض — غرفتان + غرفة حارس + مكيفات",
+    specs:"٥٠٠م² / ٢٥٠م² بناء. غرفتان + مطبخ راكب + حمام + حوش + مكيفات راكبة + غرفة حارس بمطبخ وحمام. قريبة من قاعدة الملك سلمان.",
+    tags:["🛏 غرفتان","🧑‍✈️ غرفة حارس","❄️ مكيفات","🌿 حوش"],
+    ac:"#117a65", url:"https://sa.aqar.fm/ad/6558932",
+  },
+  // ══ جنوب الرياض — حي السلي ══
+  {
+    id:"R15", area:"السلي", region:"جنوب", type:"سنوي",
+    annual:30000, monthly:2500, phone:"0554969900",
+    name:"السلي — غرفة ٥×٦ + مستودع · ٣٠ألف",
+    specs:"٣٧٥م². حوش + غرفة واسعة ٥×٦ + مطبخ + مستودع + دورة مياه. شارع المرابد. مكتب أدق العقود.",
+    tags:["🛏 غرفة ٥×٦","🗄 مستودع","🌿 حوش","📐 ٣٧٥م²"],
+    ac:"#922b21", url:"https://sa.aqar.fm/ad/6607057",
+  },
+];
+
+// ── helpers ───────────────────────────────────────────────────
+const fmt = n => n>0 ? n.toLocaleString("ar-SA")+" ريال" : "اتصل";
+const REGIONS = ["الكل","شمال","شرق","جنوب"];
+const AREAS   = ["الكل",...new Set(LISTINGS.map(r=>r.area))];
+const TYPES   = ["الكل","سنوي","شهري"];
+const regionColor = r => r==="شمال"?"#3498db":r==="شرق"?"#e67e22":"#27ae60";
+
+function TypeBadge({type}){
+  return <span style={{background:type==="شهري"?"rgba(39,174,96,.15)":"rgba(201,168,76,.1)",border:"1px solid "+(type==="شهري"?"#27ae6044":"#c9a84c44"),color:type==="شهري"?"#2ecc71":"#c9a84c",fontSize:9,fontWeight:800,padding:"2px 7px",borderRadius:100}}>{type==="شهري"?"📅 شهري":"📋 سنوي"}</span>;
+}
+
+// ── Member Toggle Button ──────────────────────────────────────
+function MemberBtn({m, voted, onToggle}){
+  return(
+    <button onClick={onToggle} title={voted?"✓ "+m.name+" — اضغط للإلغاء":m.name}
+      style={{display:"flex",flexDirection:"column",alignItems:"center",gap:2,
+        padding:"6px 2px 5px",borderRadius:10,cursor:"pointer",outline:"none",
+        border:"2px solid "+(voted?m.c:"#1e1e1e"),
+        background:voted?m.c+"22":"#0e0e0e",transition:"all .15s"}}>
+      <div style={{width:28,height:28,borderRadius:"50%",
+        background:voted?m.c:"#1a1a1a",
+        display:"flex",alignItems:"center",justifyContent:"center",
+        fontSize:9,fontWeight:800,color:voted?"#fff":"#2a2a2a",
+        boxShadow:voted?"0 2px 8px "+m.c+"66":"none"}}>
+        {voted?"✓":m.ini}
+      </div>
+      <div style={{fontSize:6.5,fontFamily:"Tajawal,sans-serif",
+        color:voted?m.c:"#252525",fontWeight:voted?700:400,textAlign:"center",lineHeight:1.2}}>
+        {m.name.split(" ")[0]}
+      </div>
+    </button>
+  );
+}
+
+// ── Card ──────────────────────────────────────────────────────
+function Card({r, votes, onToggle}){
+  // votes[lid] = Set of memberIds
+  const voters = MEMBERS.filter(m=>(votes[r.id]||new Set()).has(m.id));
+  const count  = voters.length;
+  const pct    = Math.round(count/N*100);
+  const perM   = r.monthly>0 ? Math.ceil(r.monthly/N) : null;
+  const perY   = r.annual>0  ? Math.ceil(r.annual/N)  : null;
+
+  return(
+    <div style={{background:"#0f0f0f",borderRadius:16,overflow:"hidden",
+      border:"1.5px solid "+(count>0?r.ac+"77":"#181818"),
+      display:"flex",flexDirection:"column",transition:"border-color .3s"}}>
+
+      {/* header strip */}
+      <div style={{height:5,background:"linear-gradient(90deg,"+r.ac+","+r.ac+"44)"}}/>
+
+      <div style={{padding:"11px 12px 10px",flex:1}}>
+        {/* region + area badges */}
+        <div style={{display:"flex",gap:4,flexWrap:"wrap",marginBottom:6,alignItems:"center"}}>
+          <span style={{background:regionColor(r.region)+"22",border:"1px solid "+regionColor(r.region)+"44",color:regionColor(r.region),fontSize:9,fontWeight:800,padding:"2px 7px",borderRadius:100}}>
+            {r.region==="شمال"?"🧭 شمال":r.region==="شرق"?"🌅 شرق":"🌄 جنوب"}
+          </span>
+          <span style={{background:r.ac+"18",border:"1px solid "+r.ac+"33",color:r.ac,fontSize:9.5,fontWeight:700,padding:"2px 7px",borderRadius:100}}>📍 {r.area}</span>
+          <TypeBadge type={r.type}/>
+        </div>
+
+        {/* title */}
+        <div style={{fontFamily:"Cairo,sans-serif",fontSize:13,fontWeight:800,color:"#e8e3dc",lineHeight:1.35,marginBottom:8}}>
+          {r.name}
+        </div>
+
+        {/* price block */}
+        <div style={{background:"#080808",borderRadius:10,padding:"8px 10px",marginBottom:8}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:6}}>
+            <div>
+              <div style={{fontSize:8,color:"#333",marginBottom:2}}>الإيجار الكلي</div>
+              <div style={{fontFamily:"Cairo,sans-serif",fontSize:15,fontWeight:900,color:"#c9a84c"}}>
+                {r.annual===0&&r.monthly===0 ? "اتصل للسعر"
+                  : r.type==="شهري" ? fmt(r.monthly)+"/شهر"
+                  : fmt(r.annual)+"/سنة"}
+              </div>
+            </div>
+            {(perM||perY)&&(
+              <div style={{textAlign:"left"}}>
+                <div style={{fontSize:8,color:"#333",marginBottom:2}}>القسط/شخص</div>
+                {perM&&<div style={{fontFamily:"Cairo,sans-serif",fontSize:12,fontWeight:800,color:"#27ae60"}}>{fmt(perM)}/شهر</div>}
+                {perY&&perY>0&&<div style={{fontFamily:"Cairo,sans-serif",fontSize:10,color:"#555"}}>{fmt(perY)}/سنة</div>}
+              </div>
+            )}
+          </div>
+          {r.type==="شهري"&&r.annual>0&&(
+            <div style={{borderTop:"1px solid #141414",marginTop:5,paddingTop:4,fontSize:9,color:"#444"}}>
+              سنوياً ×١٢: {fmt(r.annual)}
+            </div>
+          )}
+        </div>
+
+        {/* tags */}
+        <div style={{display:"flex",flexWrap:"wrap",gap:3,marginBottom:7}}>
+          {r.tags.map(t=><span key={t} style={{background:"#151515",border:"1px solid #1e1e1e",color:"#444",fontSize:8.5,padding:"2px 6px",borderRadius:5}}>{t}</span>)}
+        </div>
+        <div style={{fontSize:10.5,color:"#333",lineHeight:1.65,marginBottom:10}}>{r.specs}</div>
+
+        {/* action row */}
+        <div style={{display:"flex",gap:5}}>
+          {r.phone && !r.phone.includes("عبر") && !r.phone.includes("مكتب") && !r.phone.includes("شركة") && (
+            <a href={"tel:"+r.phone} style={{fontSize:10,fontWeight:700,fontFamily:"Cairo,sans-serif",padding:"8px 9px",background:"#151515",border:"1px solid #222",color:"#c9a84c",borderRadius:9,textDecoration:"none",whiteSpace:"nowrap"}}>
+              📞 {r.phone}
+            </a>
+          )}
+          <a href={r.url} target="_blank" rel="noreferrer"
+            style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center",gap:5,
+              background:"#0a1f3d",border:"1px solid #153060",color:"#5aacff",
+              fontFamily:"Cairo,sans-serif",fontSize:11,fontWeight:700,
+              padding:"8px",borderRadius:9,textDecoration:"none"}}>
+            📋 فتح الإعلان المباشر ↗
+          </a>
+        </div>
+      </div>
+
+      {/* ── VOTE SECTION ── */}
+      <div style={{background:"#070707",borderTop:"1px solid #141414",padding:"10px 11px"}}>
+        {/* header */}
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+          <div style={{display:"flex",alignItems:"center",gap:7}}>
+            <span style={{fontFamily:"Cairo,sans-serif",fontSize:10,color:"#333",fontWeight:600}}>
+              👍 تصويت متعدد — اضغط اسمك للإضافة/الإلغاء
+            </span>
+            {count>0&&(
+              <span style={{background:r.ac+"20",border:"1px solid "+r.ac+"55",color:r.ac,fontSize:10,fontWeight:800,padding:"2px 8px",borderRadius:100}}>
+                {count} 🗳️
+              </span>
+            )}
+          </div>
+          {count>0&&(
+            <span style={{background:"#c9a84c",color:"#000",fontFamily:"Cairo,sans-serif",fontSize:10,fontWeight:800,padding:"2px 9px",borderRadius:100}}>
+              {Math.round(pct)}%
+            </span>
+          )}
+        </div>
+
+        {/* members grid 6+5 */}
+        <div style={{display:"grid",gridTemplateColumns:"repeat(6,1fr)",gap:4,marginBottom:4}}>
+          {MEMBERS.slice(0,6).map(m=>(
+            <MemberBtn key={m.id} m={m}
+              voted={(votes[r.id]||new Set()).has(m.id)}
+              onToggle={()=>onToggle(r.id,m.id)}/>
+          ))}
+        </div>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:4}}>
+          {MEMBERS.slice(6).map(m=>(
+            <MemberBtn key={m.id} m={m}
+              voted={(votes[r.id]||new Set()).has(m.id)}
+              onToggle={()=>onToggle(r.id,m.id)}/>
+          ))}
+        </div>
+
+        {/* progress + voter chips */}
+        {count>0&&(
+          <>
+            <div style={{marginTop:8,height:3,background:"#181818",borderRadius:100,overflow:"hidden"}}>
+              <div style={{height:"100%",width:pct+"%",background:"linear-gradient(90deg,"+r.ac+","+r.ac+"66)",borderRadius:100,transition:"width .4s"}}/>
+            </div>
+            <div style={{marginTop:5,display:"flex",flexWrap:"wrap",gap:3}}>
+              {voters.map(m=>(
+                <span key={m.id} style={{background:m.c+"18",border:"1px solid "+m.c+"44",color:m.c,fontSize:8.5,fontWeight:700,padding:"1px 6px",borderRadius:100}}>
+                  {m.name.split(" ")[0]}
+                </span>
+              ))}
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── Results Tab ───────────────────────────────────────────────
+function Results({votes}){
+  const vc = id => (votes[id]||new Set()).size;
+  const totalVotes = Object.values(votes).reduce((s,v)=>s+v.size,0);
+  const ranked = [...LISTINGS].filter(r=>vc(r.id)>0).sort((a,b)=>vc(b.id)-vc(a.id));
+
+  // member → all their voted listings
+  const memberVoted = MEMBERS.map(m=>({
+    m,
+    picks: LISTINGS.filter(r=>(votes[r.id]||new Set()).has(m.id))
+  }));
+
+  return(
+    <div style={{maxWidth:740,margin:"0 auto",padding:"18px 14px"}}>
+      <div style={{fontFamily:"Cairo,sans-serif",fontSize:17,fontWeight:800,color:"#e8e3dc",marginBottom:5}}>
+        📊 نتائج التصويت
+      </div>
+      <div style={{color:"#2a2a2a",fontSize:11,marginBottom:16}}>
+        {totalVotes} صوت إجمالي · {ranked.length} استراحة حصلت على أصوات
+      </div>
+
+      {totalVotes===0&&(
+        <div style={{textAlign:"center",padding:"50px 0",color:"#1a1a1a"}}>
+          <div style={{fontSize:36,marginBottom:10}}>🗳️</div>
+          <div style={{fontFamily:"Cairo,sans-serif",fontSize:13}}>لا توجد أصوات حتى الآن</div>
+        </div>
+      )}
+
+      {ranked.map((r,i)=>{
+        const v=vc(r.id);
+        const pct=totalVotes>0?Math.round(v/totalVotes*100):0;
+        const voterList=MEMBERS.filter(m=>(votes[r.id]||new Set()).has(m.id));
+        const win=i===0;
+        const perM=r.monthly>0?Math.ceil(r.monthly/N):null;
+        const perY=r.annual>0?Math.ceil(r.annual/N):null;
+        return(
+          <div key={r.id} style={{
+            background:win?"rgba(201,168,76,.06)":"#0c0c0c",
+            border:"1.5px solid "+(win?"#c9a84c66":"#161616"),
+            borderRadius:14,padding:"12px 13px",marginBottom:10}}>
+            <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:9}}>
+              <div style={{fontFamily:"Cairo,sans-serif",fontSize:22,fontWeight:900,color:"#c9a84c",minWidth:28,textAlign:"center"}}>
+                {win?"🏆":i+1}
+              </div>
+              <div style={{flex:1,minWidth:0}}>
+                <div style={{fontFamily:"Cairo,sans-serif",fontSize:12,fontWeight:800,color:"#e8e3dc",marginBottom:4,lineHeight:1.3}}>
+                  {r.name}
+                </div>
+                <div style={{display:"flex",gap:4,flexWrap:"wrap",marginBottom:4}}>
+                  <span style={{background:r.ac+"18",color:r.ac,fontSize:9,padding:"1px 6px",borderRadius:100,fontWeight:700}}>{r.area}</span>
+                  <TypeBadge type={r.type}/>
+                </div>
+                <div style={{display:"flex",flexWrap:"wrap",gap:3,marginBottom:4}}>
+                  {voterList.map(m=>(
+                    <span key={m.id} style={{background:m.c+"18",border:"1px solid "+m.c+"44",color:m.c,fontSize:9,fontWeight:700,padding:"1px 6px",borderRadius:100}}>
+                      {m.name.split(" ")[0]}
+                    </span>
+                  ))}
+                </div>
+                <div style={{height:4,background:"#181818",borderRadius:100,overflow:"hidden"}}>
+                  <div style={{height:"100%",width:pct+"%",background:"linear-gradient(90deg,"+r.ac+","+r.ac+"77)",borderRadius:100,transition:"width .5s"}}/>
+                </div>
+              </div>
+              <div style={{textAlign:"center",minWidth:38}}>
+                <div style={{fontFamily:"Cairo,sans-serif",fontSize:22,fontWeight:900,color:r.ac}}>
+                  {v}
+                </div>
+                <div style={{fontSize:8,color:"#2a2a2a"}}>صوت</div>
+              </div>
+            </div>
+
+            {/* cost breakdown + link */}
+            <div style={{background:"#080808",borderRadius:10,padding:"7px 9px",display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:8}}>
+              <div style={{display:"flex",gap:14,flexWrap:"wrap"}}>
+                <div style={{textAlign:"center"}}>
+                  <div style={{fontSize:8,color:"#333"}}>شهري/شخص</div>
+                  <div style={{fontFamily:"Cairo,sans-serif",fontSize:12,fontWeight:800,color:"#27ae60"}}>{perM?fmt(perM):"—"}</div>
+                </div>
+                {perY&&perY>0&&(
+                  <>
+                    <div style={{width:1,height:28,background:"#181818"}}/>
+                    <div style={{textAlign:"center"}}>
+                      <div style={{fontSize:8,color:"#333"}}>سنوي/شخص</div>
+                      <div style={{fontFamily:"Cairo,sans-serif",fontSize:12,fontWeight:800,color:"#c9a84c"}}>{fmt(perY)}</div>
+                    </div>
+                  </>
+                )}
+              </div>
+              <a href={r.url} target="_blank" rel="noreferrer"
+                style={{display:"flex",alignItems:"center",gap:4,background:"#0a1f3d",border:"1px solid #153060",color:"#5aacff",fontFamily:"Cairo,sans-serif",fontSize:10,fontWeight:700,padding:"6px 10px",borderRadius:8,textDecoration:"none"}}>
+                📋 فتح الإعلان ↗
+              </a>
+            </div>
+          </div>
+        );
+      })}
+
+      {/* per-member summary */}
+      {totalVotes>0&&(
+        <div style={{marginTop:20}}>
+          <div style={{fontFamily:"Cairo,sans-serif",fontSize:14,fontWeight:800,color:"#e8e3dc",marginBottom:12}}>
+            👥 تفصيل أصوات كل عضو
+          </div>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))",gap:7}}>
+            {memberVoted.map(({m,picks})=>(
+              <div key={m.id} style={{background:"#0c0c0c",border:"1px solid "+(picks.length>0?m.c+"44":"#181818"),borderRadius:11,padding:"9px 10px"}}>
+                <div style={{display:"flex",alignItems:"center",gap:7,marginBottom:picks.length>0?6:0}}>
+                  <div style={{width:30,height:30,borderRadius:"50%",background:picks.length>0?m.c:"#1a1a1a",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"Cairo,sans-serif",fontSize:10,fontWeight:800,color:picks.length>0?"#fff":"#222",flexShrink:0}}>
+                    {picks.length>0?picks.length:m.ini}
+                  </div>
+                  <div>
+                    <div style={{fontFamily:"Cairo,sans-serif",fontSize:11,fontWeight:800,color:"#bbb"}}>{m.name}</div>
+                    <div style={{fontSize:9,color:picks.length>0?m.c:"#222"}}>
+                      {picks.length>0?picks.length+" صوت":"لم يصوّت بعد"}
+                    </div>
+                  </div>
+                </div>
+                {picks.map(p=>(
+                  <div key={p.id} style={{background:p.ac+"10",border:"1px solid "+p.ac+"22",borderRadius:7,padding:"3px 7px",marginTop:4}}>
+                    <div style={{fontFamily:"Cairo,sans-serif",fontSize:9,fontWeight:700,color:p.ac}}>{p.area}</div>
+                    <div style={{fontSize:8,color:"#2a2a2a",lineHeight:1.3}}>{p.name.split("·")[0].trim()}</div>
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── App ─────────────────────────────────────────────────────
+const API = "/api/votes";  // same-origin — no CORS issues
+
+const toPlain   = v => Object.fromEntries(Object.entries(v).map(([k,s])=>[k,[...s]]));
+const fromPlain = o => Object.fromEntries(Object.entries(o).map(([k,a])=>[k, new Set(a)]));
+
+async function getVotes() {
+  const r = await fetch(API);
+  const d = await r.json();
+  return d.votes || {};
+}
+
+async function saveVotes(plain) {
+  await fetch(API, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ votes: plain })
+  });
+}
+
+function App(){
+  const [votes,      setVotes]      = useState({});
+  const [loading,    setLoading]    = useState(true);
+  const [syncStatus, setSyncStatus] = useState("idle");
+  const [tab,        setTab]        = useState(0);
+  const [regF,       setRegF]       = useState("\u0627\u0644\u0643\u0644");
+  const [areaF,      setAreaF]      = useState("\u0627\u0644\u0643\u0644");
+  const [typeF,      setTypeF]      = useState("\u0627\u0644\u0643\u0644");
+  const [sort,       setSort]       = useState("votes");
+
+  const loadVotes = useCallback(async () => {
+    try {
+      const plain = await getVotes();
+      setVotes(fromPlain(plain));
+      setSyncStatus("ok");
+    } catch {
+      setSyncStatus("error");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadVotes();
+    const iv = setInterval(loadVotes, 6000);
+    return () => clearInterval(iv);
+  }, [loadVotes]);
+
+  const onToggle = useCallback((lid, mid) => {
+    setVotes(prev => {
+      const newSet = new Set(prev[lid] || []);
+      if (newSet.has(mid)) newSet.delete(mid);
+      else                  newSet.add(mid);
+      const next = { ...prev, [lid]: newSet };
+      setSyncStatus("saving");
+      saveVotes(toPlain(next))
+        .then(() => setSyncStatus("ok"))
+        .catch(() => setSyncStatus("error"));
+      return next;
+    });
+  }, []);
+
+  const totalVotes  = Object.values(votes).reduce((s,v)=>s+v.size, 0);
+  const totalVoters = new Set(Object.values(votes).flatMap(s=>[...s])).size;
+  const syncInfo = {
+    idle:   { label: "",           color: "#555"    },
+    saving: { label: "⏳ حفظ…",   color: "#c9a84c" },
+    ok:     { label: "✅ Synced",  color: "#27ae60" },
+    error:  { label: "⚠️ خطأ",    color: "#e74c3c" },
+  }[syncStatus];
+
+  if (loading) return (
+    <div style={{minHeight:"100vh",background:"#080808",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:16}}>
+      <div style={{fontSize:40}}>🏡</div>
+      <div style={{fontFamily:"Cairo,sans-serif",fontSize:14,color:"#555"}}>جاري التحميل…</div>
+    </div>
+  );
+
+  const TABS=["🏡 الخيارات","📊 النتائج"];
+  const REGIONS=["الكل","شمال","شرق","جنوب"];
+  const TYPES=["الكل","سنوي","شهري"];
+
+  let filtered = LISTINGS.filter(r=>{
+    if(regF!=="الكل"&&r.region!==regF) return false;
+    if(areaF!=="الكل"&&r.area!==areaF) return false;
+    if(typeF!=="الكل"&&r.type!==typeF) return false;
+    return true;
+  });
+  filtered=[...filtered].sort((a,b)=>{
+    if(sort==="votes") return (votes[b.id]||new Set()).size-(votes[a.id]||new Set()).size;
+    const pa=a.type==="شهري"?a.monthly*12:a.annual,pb=b.type==="شهري"?b.monthly*12:b.annual;
+    if(!pa)return 1;if(!pb)return -1;
+    return sort==="price_asc"?pa-pb:pb-pa;
+  });
+
+  const FB=({val,cur,set,label})=>(
+    <button onClick={()=>set(val)} style={{background:cur===val?"#c9a84c":"#0f0f0f",border:"1px solid "+(cur===val?"#c9a84c":"#1c1c1c"),color:cur===val?"#000":"#383838",fontFamily:"Cairo,sans-serif",fontSize:10,fontWeight:cur===val?800:400,padding:"4px 11px",borderRadius:100,cursor:"pointer",whiteSpace:"nowrap",flexShrink:0}}>{label}</button>
+  );
+
+  return(
+    <div style={{minHeight:"100vh",background:"#080808",color:"#e0ddd8",fontFamily:"Tajawal,Arial,sans-serif",direction:"rtl"}}>
+      <div style={{background:"linear-gradient(160deg,#060606,#100a00,#060606)",padding:"20px 14px 14px",textAlign:"center",borderBottom:"1px solid #111"}}>
+        <div style={{fontFamily:"Cairo,sans-serif",fontSize:"clamp(20px,5vw,32px)",fontWeight:900,color:"#c9a84c",marginBottom:4}}>🏡 تصويت الاستراحة</div>
+        {syncInfo.label&&<div style={{fontSize:10,color:syncInfo.color,marginBottom:6,fontWeight:600}}>{syncInfo.label}</div>}
+        <div style={{display:"flex",justifyContent:"center",gap:8,flexWrap:"wrap",marginBottom:14}}>
+          {[["#c9a84c","📋 سنوي ≤٤٥ألف"],["#27ae60","📅 شهري ≤٦ألف"],["#5aacff","👍 تصويت متعدد"]].map(([c,t])=>(
+            <span key={t} style={{background:c+"11",border:"1px solid "+c+"33",color:c,padding:"4px 11px",borderRadius:100,fontSize:10,fontWeight:700}}>{t}</span>
+          ))}
+        </div>
+        <div style={{display:"inline-flex",gap:24,background:"#0d0d0d",borderRadius:14,border:"1px solid #181818",padding:"10px 20px"}}>
+          {[[LISTINGS.length,"استراحة"],[totalVotes,"صوت"],[totalVoters,"مصوّت"],[N-totalVoters,"لم يصوّت"]].map(([n,l])=>(
+            <div key={l}><div style={{fontFamily:"Cairo,sans-serif",fontSize:19,fontWeight:900,color:"#c9a84c"}}>{n}</div><div style={{fontSize:9,color:"#252525"}}>{l}</div></div>
+          ))}
+        </div>
+      </div>
+      <div style={{display:"flex",background:"#060606",borderBottom:"1px solid #111",position:"sticky",top:0,zIndex:20}}>
+        {TABS.map((t,i)=>(
+          <button key={i} onClick={()=>setTab(i)} style={{flex:1,padding:"12px 4px",fontFamily:"Cairo,sans-serif",fontSize:12,fontWeight:700,color:tab===i?"#c9a84c":"#222",background:"none",border:"none",borderBottom:"2.5px solid "+(tab===i?"#c9a84c":"transparent"),cursor:"pointer"}}>{t}</button>
+        ))}
+      </div>
+      {tab===0&&(<>
+        <div style={{background:"#060606",borderBottom:"1px solid #111",padding:"8px 12px",display:"flex",flexDirection:"column",gap:6}}>
+          <div style={{display:"flex",gap:4,overflowX:"auto",scrollbarWidth:"none",alignItems:"center"}}>
+            <span style={{color:"#1e1e1e",fontSize:9,lineHeight:"26px",flexShrink:0}}>المنطقة:</span>
+            {REGIONS.map(r=><FB key={r} val={r} cur={regF} set={v=>{setRegF(v);setAreaF("الكل");}} label={r==="الكل"?"🗺 الكل":"🧭 "+r}/>)}
+          </div>
+          <div style={{display:"flex",gap:4,overflowX:"auto",scrollbarWidth:"none",alignItems:"center"}}>
+            <span style={{color:"#1e1e1e",fontSize:9,lineHeight:"26px",flexShrink:0}}>الحي:</span>
+            {(regF==="الكل"?["الكل",...new Set(LISTINGS.map(r=>r.area))]:["الكل",...new Set(LISTINGS.filter(r=>r.region===regF).map(r=>r.area))]).map(a=><FB key={a} val={a} cur={areaF} set={setAreaF} label={a==="الكل"?"الكل":a}/>)}
+          </div>
+          <div style={{display:"flex",gap:4,overflowX:"auto",scrollbarWidth:"none",alignItems:"center"}}>
+            <span style={{color:"#1e1e1e",fontSize:9,lineHeight:"26px",flexShrink:0}}>الإيجار:</span>
+            {TYPES.map(t=><FB key={t} val={t} cur={typeF} set={setTypeF} label={t==="الكل"?"الكل":t==="سنوي"?"📋 سنوي":"📅 شهري"}/>)}
+            <span style={{color:"#1e1e1e",fontSize:9,lineHeight:"26px",flexShrink:0,marginRight:6}}>ترتيب:</span>
+            <FB val="votes" cur={sort} set={setSort} label="🗳️ الأصوات"/>
+            <FB val="price_asc" cur={sort} set={setSort} label="💰 الأرخص"/>
+            <FB val="price_desc" cur={sort} set={setSort} label="💎 الأغلى"/>
+          </div>
+        </div>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(272px,1fr))",gap:10,padding:"8px 12px 24px",maxWidth:1300,margin:"0 auto"}}>
+          {filtered.map(r=><Card key={r.id} r={r} votes={votes} onToggle={onToggle}/>)}
+        </div>
+      </>)}
+      {tab===1&&<Results votes={votes}/>}
+      <div style={{textAlign:"center",padding:"10px",color:"#1a1a1a",fontSize:8.5,borderTop:"1px solid #0e0e0e"}}>
+        🔄 تتحدث كل ٦ ثواني · ✅ مشترك بين الجميع · بدون تسجيل دخول
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>
